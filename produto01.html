@@ -1,23 +1,460 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 
 <head>
+
 <meta charset="utf-8">
-<title>Produto 01</title>
+
+<title>Produto 01 - Dinâmica da Soja</title>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    margin:40px;
+    line-height:1.6;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+th,td{
+    border:1px solid #d9d9d9;
+    padding:8px;
+    text-align:left;
+}
+
+th{
+    cursor:pointer;
+    background:#f2f2f2;
+}
+
+th:hover{
+    background:#e8e8e8;
+}
+
+.cards{
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+.card{
+    border:1px solid #d9d9d9;
+    border-radius:5px;
+    padding:15px;
+    min-width:220px;
+    background:#fafafa;
+}
+
+.card h3{
+    margin-top:0;
+    margin-bottom:5px;
+    font-size:15px;
+}
+
+.card p{
+    margin:0;
+    font-size:20px;
+    font-weight:bold;
+}
+
+#busca{
+    width:350px;
+    padding:10px;
+}
+
+#filtroReverte{
+    padding:10px;
+    margin-right:10px;
+}
+
+.ranking{
+    column-count:2;
+}
+
+hr{
+    margin-top:30px;
+    margin-bottom:30px;
+}
+
+</style>
+
 </head>
 
 <body>
 
-<h1>Produto 01 Funcionando</h1>
+<hr>
 
 <p>
-GitHub Pages funcionando.
+<a href="index.html">🏠 Início</a> |
+<a href="metodologia.html">📖 Metodologia</a> |
+<a href="produtos.html">📦 Produtos</a>
+</p>
+
+<hr>
+
+<h1>Produto 01 - Dinâmica da Soja</h1>
+
+<p>
+O Produto 01 apresenta a distribuição espacial da soja nos municípios
+avaliados pelo Atlas Reverte, permitindo identificar áreas consolidadas,
+municípios em crescimento e territórios estratégicos para expansão
+sustentável.
 </p>
 
 <p>
-Arquivo produto01.html funcionando.
+Os resultados abaixo são carregados automaticamente a partir do arquivo
+<b>dados/area_soja.csv</b>.
 </p>
+
+<div class="cards">
+
+    <div class="card">
+        <h3>Municípios Analisados</h3>
+        <p id="nMunicipios">-</p>
+    </div>
+
+    <div class="card">
+        <h3>Área Total de Soja (2025)</h3>
+        <p id="areaTotal">-</p>
+    </div>
+
+    <div class="card">
+        <h3>Maior Área de Soja</h3>
+        <p id="liderArea">-</p>
+    </div>
+
+    <div class="card">
+        <h3>Maior Expansão (10 anos)</h3>
+        <p id="liderExpansao">-</p>
+    </div>
+
+</div>
+
+<hr>
+
+<h2>Top 20 Municípios por Área de Soja (2025)</h2>
+
+<div id="rankingArea" class="ranking"></div>
+
+<hr>
+
+<h2>Top 20 Municípios por Expansão da Soja (10 anos)</h2>
+
+<div id="rankingExpansao" class="ranking"></div>
+
+<hr>
+
+<h2>Perguntas Respondidas</h2>
+
+<ul>
+<li>Onde está concentrada a soja?</li>
+<li>Quais municípios possuem maior área cultivada?</li>
+<li>Onde ocorreu maior crescimento da soja?</li>
+<li>Quais municípios integram o Programa Reverte?</li>
+<li>Qual a magnitude da expansão observada nos últimos 5 e 10 anos?</li>
+</ul>
+
+<hr>
+
+<h2>Consulta Municipal</h2>
+
+<select id="filtroReverte">
+
+    <option value="Todos">Todos</option>
+    <option value="Reverte">Somente Reverte</option>
+    <option value="Não">Somente Não Reverte</option>
+
+</select>
+
+<input
+type="text"
+id="busca"
+placeholder="Pesquisar município..."
+>
+
+<table>
+
+<thead>
+
+<tr>
+<th onclick="ordenar('Munic')">Município ▲▼</th>
+<th onclick="ordenar('UF')">UF ▲▼</th>
+<th onclick="ordenar('Area_Soja_ha_2025')">Área Soja 2025 ▲▼</th>
+<th onclick="ordenar('Area_Soja_ha_2020')">Área Soja 2020 ▲▼</th>
+<th onclick="ordenar('Area_Soja_ha_2015')">Área Soja 2015 ▲▼</th>
+<th onclick="ordenar('Expansao_10_anos')">Expansão 10 anos ▲▼</th>
+<th onclick="ordenar('Expansao_5_anos')">Expansão 5 anos ▲▼</th>
+<th onclick="ordenar('Mun_Rev')">Reverte ▲▼</th>
+</tr>
+
+</thead>
+
+<tbody id="tabela"></tbody>
+
+</table>
+
+<script>
+
+let dadosOriginais = [];
+let ordemAsc = true;
+
+function paraNumero(valor){
+
+    if(!valor) return 0;
+
+    return parseFloat(
+        valor.toString()
+        .replace(/\./g,"")
+        .replace(",",".")
+    ) || 0;
+}
+
+function paraPercentual(valor){
+
+    if(!valor) return 0;
+
+    return parseFloat(
+        valor.toString().replace("%","")
+    ) || 0;
+}
+
+function preencherTabela(lista){
+
+    let html = "";
+
+    lista.forEach(function(row){
+
+        html += `
+        <tr>
+            <td>${row.Munic}</td>
+            <td>${row.UF}</td>
+            <td>${row.Area_Soja_ha_2025}</td>
+            <td>${row.Area_Soja_ha_2020}</td>
+            <td>${row.Area_Soja_ha_2015}</td>
+            <td>${row.Expansao_10_anos}</td>
+            <td>${row.Expansao_5_anos}</td>
+            <td>${row.Mun_Rev}</td>
+        </tr>
+        `;
+
+    });
+
+    document.getElementById("tabela").innerHTML = html;
+}
+
+function ordenar(campo){
+
+    dadosOriginais.sort(function(a,b){
+
+        let va = a[campo];
+        let vb = b[campo];
+
+        if(campo.includes("Area")){
+
+            va = paraNumero(va);
+            vb = paraNumero(vb);
+
+        }else if(campo.includes("Expansao")){
+
+            va = paraPercentual(va);
+            vb = paraPercentual(vb);
+
+        }
+
+        if(va < vb) return ordemAsc ? -1 : 1;
+        if(va > vb) return ordemAsc ? 1 : -1;
+
+        return 0;
+
+    });
+
+    ordemAsc = !ordemAsc;
+
+    aplicarFiltros();
+}
+
+function aplicarFiltros(){
+
+    let texto =
+        document.getElementById("busca")
+        .value
+        .toLowerCase();
+
+    let filtro =
+        document.getElementById("filtroReverte")
+        .value;
+
+    let resultado = dadosOriginais.filter(function(row){
+
+        let okTexto =
+            row.Munic.toLowerCase()
+            .includes(texto);
+
+        let okReverte = true;
+
+        if(filtro === "Reverte"){
+
+            okReverte =
+                row.Mun_Rev === "Reverte";
+
+        }
+
+        if(filtro === "Não"){
+
+            okReverte =
+                row.Mun_Rev !== "Reverte";
+
+        }
+
+        return okTexto && okReverte;
+
+    });
+
+    preencherTabela(resultado);
+}
+
+function gerarRankings(){
+
+    let topArea = [...dadosOriginais]
+
+    .sort((a,b)=>
+        paraNumero(b.Area_Soja_ha_2025) -
+        paraNumero(a.Area_Soja_ha_2025)
+    )
+
+    .slice(0,20);
+
+    let htmlArea = "<ol>";
+
+    topArea.forEach(function(row){
+
+        htmlArea +=
+        `<li>${row.Munic} (${row.UF}) - ${row.Area_Soja_ha_2025} ha</li>`;
+
+    });
+
+    htmlArea += "</ol>";
+
+    document.getElementById("rankingArea").innerHTML =
+        htmlArea;
+
+    let topExp = [...dadosOriginais]
+
+    .filter(
+        x => paraNumero(x.Area_Soja_ha_2025) >= 10000
+    )
+
+    .sort((a,b)=>
+        paraPercentual(b.Expansao_10_anos) -
+        paraPercentual(a.Expansao_10_anos)
+    )
+
+    .slice(0,20);
+
+    let htmlExp = "<ol>";
+
+    topExp.forEach(function(row){
+
+        htmlExp +=
+        `<li>${row.Munic} (${row.UF}) - ${row.Expansao_10_anos}</li>`;
+
+    });
+
+    htmlExp += "</ol>";
+
+    document.getElementById("rankingExpansao").innerHTML =
+        htmlExp;
+}
+
+Papa.parse("dados/area_soja.csv",{
+
+    download:true,
+    header:true,
+    delimiter:";",
+
+    transformHeader:function(header){
+
+        return header
+            .trim()
+            .replace(/\s+/g,"_");
+    },
+
+    complete:function(resultado){
+
+        dadosOriginais = resultado.data.filter(
+            x => x.Munic && x.Munic.trim() !== ""
+        );
+
+        preencherTabela(dadosOriginais);
+
+        document.getElementById("nMunicipios").innerHTML =
+            dadosOriginais.length;
+
+        let areaTotal = dadosOriginais.reduce(function(total,row){
+
+            return total +
+                   paraNumero(row.Area_Soja_ha_2025);
+
+        },0);
+
+        document.getElementById("areaTotal").innerHTML =
+            areaTotal.toLocaleString(
+                "pt-BR",
+                {
+                    maximumFractionDigits:0
+                }
+            ) + " ha";
+
+        let liderArea = [...dadosOriginais]
+
+            .sort((a,b)=>
+                paraNumero(b.Area_Soja_ha_2025) -
+                paraNumero(a.Area_Soja_ha_2025)
+            )[0];
+
+        document.getElementById("liderArea").innerHTML =
+            liderArea.Munic +
+            " (" + liderArea.UF + ")";
+
+        let liderExpansao = [...dadosOriginais]
+
+            .filter(
+                x => paraNumero(x.Area_Soja_ha_2025) >= 10000
+            )
+
+            .sort((a,b)=>
+                paraPercentual(b.Expansao_10_anos) -
+                paraPercentual(a.Expansao_10_anos)
+            )[0];
+
+        document.getElementById("liderExpansao").innerHTML =
+            liderExpansao.Munic +
+            " (" + liderExpansao.Expansao_10_anos + ")";
+
+        gerarRankings();
+
+    }
+
+});
+
+document
+.getElementById("busca")
+.addEventListener("keyup", aplicarFiltros);
+
+document
+.getElementById("filtroReverte")
+.addEventListener("change", aplicarFiltros);
+
+</script>
 
 </body>
-
 </html>
