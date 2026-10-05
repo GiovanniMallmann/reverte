@@ -7,7 +7,11 @@
 
 <title>Produto 01 - Dinâmica da Soja</title>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+
+body{
     font-family: Arial, sans-serif;
     margin:40px;
     line-height:1.6;
@@ -87,14 +91,14 @@ hr{
 <h1>Produto 01 - Dinâmica da Soja</h1>
 
 <p>
-O Produto 01 analisa a distribuição espacial da soja nos municípios
+O Produto 01 apresenta a distribuição espacial da soja nos municípios
 avaliados pelo Atlas Reverte, permitindo identificar áreas
-consolidadas de produção, territórios em expansão e municípios
-estratégicos para ações de desenvolvimento sustentável.
+consolidadas de produção, municípios com crescimento recente e
+territórios estratégicos para ações de expansão sustentável.
 </p>
 
 <p>
-Os resultados são carregados automaticamente a partir da base
+Os resultados abaixo são carregados automaticamente a partir do arquivo
 <b>dados/area_soja.csv</b>.
 </p>
 
@@ -139,9 +143,9 @@ Os resultados são carregados automaticamente a partir da base
 <h2>Consulta Municipal</h2>
 
 <input
-type="text"
-id="busca"
-placeholder="Pesquisar município..."
+    type="text"
+    id="busca"
+    placeholder="Pesquisar município..."
 >
 
 <table>
@@ -149,19 +153,20 @@ placeholder="Pesquisar município..."
 <thead>
 
 <tr>
-<th>Município</th>
-<th>UF</th>
-<th>Área Soja 2025 (ha)</th>
-<th>Área Soja 2020 (ha)</th>
-<th>Área Soja 2015 (ha)</th>
-<th>Expansão 10 anos</th>
-<th>Expansão 5 anos</th>
-<th>Reverte</th>
+    <th>Município</th>
+    <th>UF</th>
+    <th>Área Soja 2025 (ha)</th>
+    <th>Área Soja 2020 (ha)</th>
+    <th>Área Soja 2015 (ha)</th>
+    <th>Expansão 10 anos</th>
+    <th>Expansão 5 anos</th>
+    <th>Reverte</th>
 </tr>
 
 </thead>
 
 <tbody id="tabela">
+
 </tbody>
 
 </table>
@@ -176,11 +181,10 @@ function paraNumero(valor){
 
     return parseFloat(
         valor
-        .toString()
-        .replace(/\./g,"")
-        .replace(",",".")
+            .toString()
+            .replace(/\./g,'')
+            .replace(',', '.')
     ) || 0;
-
 }
 
 function paraPercentual(valor){
@@ -188,9 +192,10 @@ function paraPercentual(valor){
     if(!valor) return 0;
 
     return parseFloat(
-        valor.toString().replace("%","")
+        valor
+            .toString()
+            .replace('%','')
     ) || 0;
-
 }
 
 function preencherTabela(lista){
@@ -211,6 +216,7 @@ function preencherTabela(lista){
             <td>${row.Mun_Rev}</td>
         </tr>
         `;
+
     });
 
     document.getElementById("tabela").innerHTML = html;
@@ -223,14 +229,18 @@ Papa.parse("dados/area_soja.csv",{
     header:true,
     delimiter:";",
 
-    transformHeader: function(header){
+    transformHeader:function(header){
 
-        return header.trim()
-                     .replace(/\s+/g,"_");
+        return header
+            .trim()
+            .replace(/\s+/g,"_");
 
     },
 
     complete:function(resultado){
+
+        console.log("CSV carregado");
+        console.log(resultado.data);
 
         dadosOriginais = resultado.data.filter(
             x => x.Munic && x.Munic.trim() !== ""
@@ -244,11 +254,12 @@ Papa.parse("dados/area_soja.csv",{
         let areaTotal = dadosOriginais.reduce(function(total,row){
 
             return total +
-            paraNumero(row.Area_Soja_ha_2025);
+                   paraNumero(row.Area_Soja_ha_2025);
 
         },0);
 
         document.getElementById("areaTotal").innerHTML =
+
             areaTotal.toLocaleString(
                 "pt-BR",
                 {
@@ -258,36 +269,48 @@ Papa.parse("dados/area_soja.csv",{
 
         let liderArea = [...dadosOriginais]
 
-        .sort(function(a,b){
+            .sort(function(a,b){
 
-            return paraNumero(b.Area_Soja_ha_2025) -
-                   paraNumero(a.Area_Soja_ha_2025);
+                return paraNumero(b.Area_Soja_ha_2025) -
+                       paraNumero(a.Area_Soja_ha_2025);
 
-        })[0];
+            })[0];
 
-        document.getElementById("liderArea").innerHTML =
-            liderArea.Munic +
-            " (" + liderArea.UF + ")";
+        if(liderArea){
+
+            document.getElementById("liderArea").innerHTML =
+                liderArea.Munic +
+                " (" + liderArea.UF + ")";
+        }
 
         let liderExpansao = [...dadosOriginais]
 
-        .sort(function(a,b){
+            .sort(function(a,b){
 
-            return paraPercentual(b.Expansao_10_anos) -
-                   paraPercentual(a.Expansao_10_anos);
+                return paraPercentual(b.Expansao_10_anos) -
+                       paraPercentual(a.Expansao_10_anos);
 
-        })[0];
+            })[0];
 
-        document.getElementById("liderExpansao").innerHTML =
-            liderExpansao.Munic +
-            " (" + liderExpansao.Expansao_10_anos + ")";
+        if(liderExpansao){
+
+            document.getElementById("liderExpansao").innerHTML =
+                liderExpansao.Munic +
+                " (" + liderExpansao.Expansao_10_anos + ")";
+        }
+
+    },
+
+    error:function(erro){
+
+        console.error("Erro ao carregar CSV:", erro);
 
     }
 
 });
 
-document.getElementById("busca")
-
+document
+.getElementById("busca")
 .addEventListener("keyup", function(){
 
     let texto = this.value.toLowerCase();
@@ -295,8 +318,8 @@ document.getElementById("busca")
     let filtrado = dadosOriginais.filter(function(row){
 
         return row.Munic
-                  .toLowerCase()
-                  .includes(texto);
+            .toLowerCase()
+            .includes(texto);
 
     });
 
@@ -309,3 +332,4 @@ document.getElementById("busca")
 </body>
 
 </html>
+`
