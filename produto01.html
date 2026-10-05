@@ -2,59 +2,84 @@
 <html lang="pt-br">
 
 <head>
-    <meta charset="utf-8">
-    <title>Produto 01 - Dinâmica da Soja</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"><yle>
+<meta charset="utf-8">
 
-        body{
-            font-family: Arial, sans-serif;
-            margin:40px;
-        }
+<title>Produto 01 - Dinâmica da Soja</title>
 
-        table{
-            border-collapse:collapse;
-            width:100%;
-        }
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.jsle>
 
-        th,td{
-            border:1px solid #ccc;
-            padding:8px;
-            text-align:left;
-        }
+body{
+    font-family: Arial, sans-serif;
+    margin:40px;
+    line-height:1.6;
+}
 
-        th{
-            background:#f2f2f2;
-        }
+table{
+    width:100%;
+    border-collapse:collapse;
+}
 
-        .cards{
-            display:flex;
-            gap:20px;
-            flex-wrap:wrap;
-            margin-bottom:20px;
-        }
+th,td{
+    border:1px solid #d9d9d9;
+    padding:8px;
+    text-align:left;
+}
 
-        .card{
-            border:1px solid #ccc;
-            padding:15px;
-            min-width:220px;
-            border-radius:5px;
-        }
+th{
+    background:#f2f2f2;
+}
 
-        #busca{
-            width:300px;
-            padding:8px;
-            margin-bottom:15px;
-        }
+.cards{
+    display:flex;
+    flex-wrap:wrap;
+    gap:15px;
+    margin-top:20px;
+    margin-bottom:20px;
+}
 
-    </style>
+.card{
+    border:1px solid #d9d9d9;
+    border-radius:5px;
+    padding:15px;
+    min-width:220px;
+    background:#fafafa;
+}
+
+.card h3{
+    margin-top:0;
+    margin-bottom:5px;
+    font-size:15px;
+}
+
+.card p{
+    margin:0;
+    font-size:20px;
+    font-weight:bold;
+}
+
+#busca{
+    width:350px;
+    padding:10px;
+    margin-bottom:15px;
+}
+
+hr{
+    margin-top:30px;
+    margin-bottom:30px;
+}
+
+</style>
 
 </head>
 
 <body>
 
+<hr>
+
 <p>
 <a href="index.html">🏠 Início</a> |
+<a href="metodologia.html">📖 Metodologia</a> |
 <a href="produtos.html">📦 Produtos</a>
 </p>
 
@@ -63,32 +88,52 @@
 <h1>Produto 01 - Dinâmica da Soja</h1>
 
 <p>
-Análise da distribuição e expansão da soja nos municípios avaliados pelo Atlas Reverte.
+O Produto 01 analisa a distribuição da soja nos municípios avaliados pelo
+Atlas Reverte, permitindo identificar áreas consolidadas de produção,
+municípios com maior crescimento recente e territórios associados à expansão
+agrícola observada entre 2015 e 2025.
+</p>
+
+<p>
+As informações abaixo são carregadas automaticamente a partir da base
+<b>area_soja.csv</b>.
 </p>
 
 <div class="cards">
 
     <div class="card">
-        <b>Municípios</b>
-        <div id="nMunicipios">-</div>
+        <h3>Municípios Analisados</h3>
+        <p id="nMunicipios">-</p>
     </div>
 
     <div class="card">
-        <b>Área Total de Soja (2025)</b>
-        <div id="areaTotal">-</div>
+        <h3>Área Total de Soja (2025)</h3>
+        <p id="areaTotal">-</p>
     </div>
 
     <div class="card">
-        <b>Líder em Área</b>
-        <div id="liderArea">-</div>
+        <h3>Maior Área de Soja</h3>
+        <p id="liderArea">-</p>
     </div>
 
     <div class="card">
-        <b>Maior Expansão (10 anos)</b>
-        <div id="liderExpansao">-</div>
+        <h3>Maior Expansão (10 anos)</h3>
+        <p id="liderExpansao">-</p>
     </div>
 
 </div>
+
+<hr>
+
+<h2>Perguntas Respondidas</h2>
+
+<ul>
+<li>Onde está concentrada a soja?</li>
+<li>Quais municípios possuem maior área cultivada?</li>
+<li>Onde ocorreu maior crescimento da soja?</li>
+<li>Quais municípios participam do Programa Reverte?</li>
+<li>Qual a magnitude da expansão observada nos últimos 5 e 10 anos?</li>
+</ul>
 
 <hr>
 
@@ -102,21 +147,160 @@ Análise da distribuição e expansão da soja nos municípios avaliados pelo At
 
 <table>
 
-    <thead>
+<thead>
 
+<tr>
+
+<th>Município</th>
+<th>UF</th>
+<th>Área Soja 2025 (ha)</th>
+<th>Área Soja 2020 (ha)</th>
+<th>Área Soja 2015 (ha)</th>
+<th>Expansão 10 anos</th>
+<th>Expansão 5 anos</th>
+<th>Reverte</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tabela">
+
+</tbody>
+
+</table>
+
+<script>
+
+let dadosOriginais = [];
+
+function paraNumero(valor){
+
+    if(valor === null || valor === undefined){
+        return 0;
+    }
+
+    return parseFloat(
+        String(valor)
+            .replace(/\./g,"")
+            .replace(",",".")
+    );
+
+}
+
+function paraPercentual(valor){
+
+    return parseFloat(
+        String(valor).replace("%","")
+    );
+
+}
+
+function preencherTabela(lista){
+
+    let html = "";
+
+    lista.forEach(function(row){
+
+        html += `
         <tr>
-            <th>Município</th>
-            <th>UF</th>
-            <th>Área 2025</th>
-            <th>Área 2020</th>
-            <th>Área 2015</th>
-            <th>Exp. 10 anos</th>
-            <th>Exp. 5 anos</th>
-            <th>Reverte</th>
+            <td>${row.Munic}</td>
+            <td>${row.UF}</td>
+            <td>${row.Area_Soja_ha_2025}</td>
+            <td>${row.Area_Soja_ha_2020}</td>
+            <td>${row.Area_Soja_ha_2015}</td>
+            <td>${row.Expansao_10_anos}</td>
+            <td>${row.Expansao_5_anos}</td>
+            <td>${row.Mun_Rev}</td>
         </tr>
+        `;
 
-    </thead>
+    });
 
-    <tbody id="tabela">
+    document.getElementById("tabela").innerHTML = html;
 
-    </tbody>
+}
+
+Papa.parse("dados/area_soja.csv",{
+
+    download:true,
+    header:true,
+
+    complete:function(resultado){
+
+        dadosOriginais = resultado.data.filter(
+            x => x.Munic && x.Munic.trim() !== ""
+        );
+
+        preencherTabela(dadosOriginais);
+
+        document.getElementById("nMunicipios").innerHTML =
+            dadosOriginais.length;
+
+        let areaTotal = dadosOriginais.reduce(function(total,row){
+
+            return total +
+                paraNumero(row.Area_Soja_ha_2025);
+
+        },0);
+
+        document.getElementById("areaTotal").innerHTML =
+            areaTotal.toLocaleString(
+                "pt-BR",
+                {
+                    minimumFractionDigits:0,
+                    maximumFractionDigits:0
+                }
+            ) + " ha";
+
+        let liderArea = [...dadosOriginais]
+        .sort(function(a,b){
+
+            return paraNumero(b.Area_Soja_ha_2025) -
+                   paraNumero(a.Area_Soja_ha_2025);
+
+        })[0];
+
+        document.getElementById("liderArea").innerHTML =
+            liderArea.Munic +
+            " (" + liderArea.UF + ")";
+
+        let liderExpansao = [...dadosOriginais]
+        .sort(function(a,b){
+
+            return paraPercentual(b.Expansao_10_anos) -
+                   paraPercentual(a.Expansao_10_anos);
+
+        })[0];
+
+        document.getElementById("liderExpansao").innerHTML =
+            liderExpansao.Munic +
+            " (" + liderExpansao.Expansao_10_anos + ")";
+
+    }
+
+});
+
+document
+.getElementById("busca")
+.addEventListener("keyup", function(){
+
+    let texto = this.value.toLowerCase();
+
+    let filtrado = dadosOriginais.filter(function(row){
+
+        return row.Munic
+            .toLowerCase()
+            .includes(texto);
+
+    });
+
+    preencherTabela(filtrado);
+
+});
+
+</script>
+
+</body>
+
+</html>
