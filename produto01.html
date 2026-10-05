@@ -30,8 +30,8 @@ th,td{
 }
 
 th{
-    cursor:pointer;
     background:#f2f2f2;
+    cursor:pointer;
 }
 
 th:hover{
@@ -76,10 +76,6 @@ th:hover{
     margin-right:10px;
 }
 
-.ranking{
-    column-count:2;
-}
-
 hr{
     margin-top:30px;
     margin-bottom:30px;
@@ -89,7 +85,7 @@ hr{
 
 </head>
 
-<body>
+    <body>
 
 <hr>
 
@@ -143,13 +139,41 @@ Os resultados abaixo são carregados automaticamente a partir do arquivo
 
 <h2>Top 20 Municípios por Área de Soja (2025)</h2>
 
-<div id="rankingArea" class="ranking"></div>
+<table>
+
+<thead>
+<tr>
+<th>Rank</th>
+<th>Município</th>
+<th>UF</th>
+<th>Área Soja 2025 (ha)</th>
+</tr>
+</thead>
+
+<tbody id="rankingArea">
+</tbody>
+
+</table>
 
 <hr>
 
 <h2>Top 20 Municípios por Expansão da Soja (10 anos)</h2>
 
-<div id="rankingExpansao" class="ranking"></div>
+<table>
+
+<thead>
+<tr>
+<th>Rank</th>
+<th>Município</th>
+<th>UF</th>
+<th>Expansão 10 anos</th>
+</tr>
+</thead>
+
+<tbody id="rankingExpansao">
+</tbody>
+
+</table>
 
 <hr>
 
@@ -198,7 +222,8 @@ placeholder="Pesquisar município..."
 
 </thead>
 
-<tbody id="tabela"></tbody>
+<tbody id="tabela">
+</tbody>
 
 </table>
 
@@ -213,9 +238,10 @@ function paraNumero(valor){
 
     return parseFloat(
         valor.toString()
-        .replace(/\./g,"")
-        .replace(",",".")
+             .replace(/\./g,"")
+             .replace(",",".")
     ) || 0;
+
 }
 
 function paraPercentual(valor){
@@ -223,8 +249,10 @@ function paraPercentual(valor){
     if(!valor) return 0;
 
     return parseFloat(
-        valor.toString().replace("%","")
+        valor.toString()
+             .replace("%","")
     ) || 0;
+
 }
 
 function preencherTabela(lista){
@@ -249,6 +277,7 @@ function preencherTabela(lista){
     });
 
     document.getElementById("tabela").innerHTML = html;
+
 }
 
 function ordenar(campo){
@@ -263,7 +292,8 @@ function ordenar(campo){
             va = paraNumero(va);
             vb = paraNumero(vb);
 
-        }else if(campo.includes("Expansao")){
+        }
+        else if(campo.includes("Expansao")){
 
             va = paraPercentual(va);
             vb = paraPercentual(vb);
@@ -280,6 +310,7 @@ function ordenar(campo){
     ordemAsc = !ordemAsc;
 
     aplicarFiltros();
+
 }
 
 function aplicarFiltros(){
@@ -296,22 +327,23 @@ function aplicarFiltros(){
     let resultado = dadosOriginais.filter(function(row){
 
         let okTexto =
-            row.Munic.toLowerCase()
-            .includes(texto);
+            row.Munic
+               .toLowerCase()
+               .includes(texto);
 
         let okReverte = true;
 
         if(filtro === "Reverte"){
 
             okReverte =
-                row.Mun_Rev === "Reverte";
+                row.Mun_Rev === "Sim";
 
         }
 
         if(filtro === "Não"){
 
             okReverte =
-                row.Mun_Rev !== "Reverte";
+                row.Mun_Rev === "Não";
 
         }
 
@@ -320,59 +352,69 @@ function aplicarFiltros(){
     });
 
     preencherTabela(resultado);
+
 }
 
 function gerarRankings(){
 
     let topArea = [...dadosOriginais]
 
-    .sort((a,b)=>
-        paraNumero(b.Area_Soja_ha_2025) -
-        paraNumero(a.Area_Soja_ha_2025)
-    )
+        .sort((a,b)=>
+            paraNumero(b.Area_Soja_ha_2025) -
+            paraNumero(a.Area_Soja_ha_2025)
+        )
 
-    .slice(0,20);
+        .slice(0,20);
 
-    let htmlArea = "<ol>";
+    let htmlArea = "";
 
-    topArea.forEach(function(row){
+    topArea.forEach(function(row,index){
 
-        htmlArea +=
-        `<li>${row.Munic} (${row.UF}) - ${row.Area_Soja_ha_2025} ha</li>`;
+        htmlArea += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${row.Munic}</td>
+            <td>${row.UF}</td>
+            <td>${row.Area_Soja_ha_2025}</td>
+        </tr>
+        `;
 
     });
-
-    htmlArea += "</ol>";
 
     document.getElementById("rankingArea").innerHTML =
         htmlArea;
 
     let topExp = [...dadosOriginais]
 
-    .filter(
-        x => paraNumero(x.Area_Soja_ha_2025) >= 10000
-    )
+        .filter(
+            x => paraNumero(x.Area_Soja_ha_2025) >= 10000
+        )
 
-    .sort((a,b)=>
-        paraPercentual(b.Expansao_10_anos) -
-        paraPercentual(a.Expansao_10_anos)
-    )
+        .sort((a,b)=>
+            paraPercentual(b.Expansao_10_anos) -
+            paraPercentual(a.Expansao_10_anos)
+        )
 
-    .slice(0,20);
+        .slice(0,20);
 
-    let htmlExp = "<ol>";
+    let htmlExp = "";
 
-    topExp.forEach(function(row){
+    topExp.forEach(function(row,index){
 
-        htmlExp +=
-        `<li>${row.Munic} (${row.UF}) - ${row.Expansao_10_anos}</li>`;
+        htmlExp += `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${row.Munic}</td>
+            <td>${row.UF}</td>
+            <td>${row.Expansao_10_anos}</td>
+        </tr>
+        `;
 
     });
 
-    htmlExp += "</ol>";
-
     document.getElementById("rankingExpansao").innerHTML =
         htmlExp;
+
 }
 
 Papa.parse("dados/area_soja.csv",{
@@ -386,6 +428,7 @@ Papa.parse("dados/area_soja.csv",{
         return header
             .trim()
             .replace(/\s+/g,"_");
+
     },
 
     complete:function(resultado){
@@ -421,9 +464,13 @@ Papa.parse("dados/area_soja.csv",{
                 paraNumero(a.Area_Soja_ha_2025)
             )[0];
 
-        document.getElementById("liderArea").innerHTML =
-            liderArea.Munic +
-            " (" + liderArea.UF + ")";
+        if(liderArea){
+
+            document.getElementById("liderArea").innerHTML =
+                liderArea.Munic +
+                " (" + liderArea.UF + ")";
+
+        }
 
         let liderExpansao = [...dadosOriginais]
 
@@ -436,11 +483,26 @@ Papa.parse("dados/area_soja.csv",{
                 paraPercentual(a.Expansao_10_anos)
             )[0];
 
-        document.getElementById("liderExpansao").innerHTML =
-            liderExpansao.Munic +
-            " (" + liderExpansao.Expansao_10_anos + ")";
+        if(liderExpansao){
+
+            document.getElementById("liderExpansao").innerHTML =
+                liderExpansao.Munic +
+                " (" +
+                liderExpansao.Expansao_10_anos +
+                ")";
+
+        }
 
         gerarRankings();
+
+    },
+
+    error:function(erro){
+
+        console.error(
+            "Erro ao carregar dados/area_soja.csv",
+            erro
+        );
 
     }
 
@@ -448,13 +510,20 @@ Papa.parse("dados/area_soja.csv",{
 
 document
 .getElementById("busca")
-.addEventListener("keyup", aplicarFiltros);
+.addEventListener(
+    "keyup",
+    aplicarFiltros
+);
 
 document
 .getElementById("filtroReverte")
-.addEventListener("change", aplicarFiltros);
+.addEventListener(
+    "change",
+    aplicarFiltros
+);
 
 </script>
 
 </body>
+
 </html>
