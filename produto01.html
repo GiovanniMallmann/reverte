@@ -7,9 +7,7 @@
 
 <title>Produto 01 - Dinâmica da Soja</title>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.jsle>
-
-body{
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script
     font-family: Arial, sans-serif;
     margin:40px;
     line-height:1.6;
@@ -18,6 +16,7 @@ body{
 table{
     width:100%;
     border-collapse:collapse;
+    margin-top:15px;
 }
 
 th,td{
@@ -88,15 +87,15 @@ hr{
 <h1>Produto 01 - Dinâmica da Soja</h1>
 
 <p>
-O Produto 01 analisa a distribuição da soja nos municípios avaliados pelo
-Atlas Reverte, permitindo identificar áreas consolidadas de produção,
-municípios com maior crescimento recente e territórios associados à expansão
-agrícola observada entre 2015 e 2025.
+O Produto 01 analisa a distribuição espacial da soja nos municípios
+avaliados pelo Atlas Reverte, permitindo identificar áreas
+consolidadas de produção, territórios em expansão e municípios
+estratégicos para ações de desenvolvimento sustentável.
 </p>
 
 <p>
-As informações abaixo são carregadas automaticamente a partir da base
-<b>area_soja.csv</b>.
+Os resultados são carregados automaticamente a partir da base
+<b>dados/area_soja.csv</b>.
 </p>
 
 <div class="cards">
@@ -131,7 +130,7 @@ As informações abaixo são carregadas automaticamente a partir da base
 <li>Onde está concentrada a soja?</li>
 <li>Quais municípios possuem maior área cultivada?</li>
 <li>Onde ocorreu maior crescimento da soja?</li>
-<li>Quais municípios participam do Programa Reverte?</li>
+<li>Quais municípios integram o Programa Reverte?</li>
 <li>Qual a magnitude da expansão observada nos últimos 5 e 10 anos?</li>
 </ul>
 
@@ -140,9 +139,9 @@ As informações abaixo são carregadas automaticamente a partir da base
 <h2>Consulta Municipal</h2>
 
 <input
-    type="text"
-    id="busca"
-    placeholder="Pesquisar município..."
+type="text"
+id="busca"
+placeholder="Pesquisar município..."
 >
 
 <table>
@@ -150,7 +149,6 @@ As informações abaixo são carregadas automaticamente a partir da base
 <thead>
 
 <tr>
-
 <th>Município</th>
 <th>UF</th>
 <th>Área Soja 2025 (ha)</th>
@@ -159,13 +157,11 @@ As informações abaixo são carregadas automaticamente a partir da base
 <th>Expansão 10 anos</th>
 <th>Expansão 5 anos</th>
 <th>Reverte</th>
-
 </tr>
 
 </thead>
 
 <tbody id="tabela">
-
 </tbody>
 
 </table>
@@ -176,23 +172,24 @@ let dadosOriginais = [];
 
 function paraNumero(valor){
 
-    if(valor === null || valor === undefined){
-        return 0;
-    }
+    if(!valor) return 0;
 
     return parseFloat(
-        String(valor)
-            .replace(/\./g,"")
-            .replace(",",".")
-    );
+        valor
+        .toString()
+        .replace(/\./g,"")
+        .replace(",",".")
+    ) || 0;
 
 }
 
 function paraPercentual(valor){
 
+    if(!valor) return 0;
+
     return parseFloat(
-        String(valor).replace("%","")
-    );
+        valor.toString().replace("%","")
+    ) || 0;
 
 }
 
@@ -214,7 +211,6 @@ function preencherTabela(lista){
             <td>${row.Mun_Rev}</td>
         </tr>
         `;
-
     });
 
     document.getElementById("tabela").innerHTML = html;
@@ -225,6 +221,14 @@ Papa.parse("dados/area_soja.csv",{
 
     download:true,
     header:true,
+    delimiter:";",
+
+    transformHeader: function(header){
+
+        return header.trim()
+                     .replace(/\s+/g,"_");
+
+    },
 
     complete:function(resultado){
 
@@ -240,7 +244,7 @@ Papa.parse("dados/area_soja.csv",{
         let areaTotal = dadosOriginais.reduce(function(total,row){
 
             return total +
-                paraNumero(row.Area_Soja_ha_2025);
+            paraNumero(row.Area_Soja_ha_2025);
 
         },0);
 
@@ -248,12 +252,12 @@ Papa.parse("dados/area_soja.csv",{
             areaTotal.toLocaleString(
                 "pt-BR",
                 {
-                    minimumFractionDigits:0,
                     maximumFractionDigits:0
                 }
             ) + " ha";
 
         let liderArea = [...dadosOriginais]
+
         .sort(function(a,b){
 
             return paraNumero(b.Area_Soja_ha_2025) -
@@ -266,6 +270,7 @@ Papa.parse("dados/area_soja.csv",{
             " (" + liderArea.UF + ")";
 
         let liderExpansao = [...dadosOriginais]
+
         .sort(function(a,b){
 
             return paraPercentual(b.Expansao_10_anos) -
@@ -281,8 +286,8 @@ Papa.parse("dados/area_soja.csv",{
 
 });
 
-document
-.getElementById("busca")
+document.getElementById("busca")
+
 .addEventListener("keyup", function(){
 
     let texto = this.value.toLowerCase();
@@ -290,8 +295,8 @@ document
     let filtrado = dadosOriginais.filter(function(row){
 
         return row.Munic
-            .toLowerCase()
-            .includes(texto);
+                  .toLowerCase()
+                  .includes(texto);
 
     });
 
