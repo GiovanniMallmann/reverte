@@ -432,6 +432,8 @@ Papa.parse("dados/area_soja.csv",{
     },
 
     complete:function(resultado){
+        console.log(resultado.data[0]);
+        return;
 
         dadosOriginais = resultado.data.filter(
             x => x.Munic && x.Munic.trim() !== ""
